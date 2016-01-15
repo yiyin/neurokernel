@@ -7,7 +7,7 @@ import pycuda.driver as cuda
 from pycuda.compiler import SourceModule
 
 class MorrisLecar(BaseNeuron):
-    def __init__(self, n_dict, V, dt, debug=False):
+    def __init__(self, n_dict, V, V2, dt, debug=False):
 
         self.num_neurons = len(n_dict['id'])
         self.dt = np.double(dt)

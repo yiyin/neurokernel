@@ -9,7 +9,7 @@ class BaseSynapse(object):
         '''
 
     @abstractmethod
-    def update_state(self, buffer):
+    def update_state(self, buffer, V):
         '''
         '''
         pass

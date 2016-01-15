@@ -19,7 +19,7 @@ from neurokernel.LPU.utils.simpleio import *
 class BaseNeuron(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, n_dict, neuron_state_pointer, dt, debug, LPU_id=None):
+    def __init__(self, n_dict, neuron_state_pointer, V, dt, debug, LPU_id=None):
         '''
         Every neuron class should setup GPU data structure needed
         by it during initialization. In addition, graded potential neurons

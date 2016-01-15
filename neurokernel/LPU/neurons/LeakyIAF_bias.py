@@ -57,7 +57,7 @@ __global__ void leaky_iaf(
 """
 
 class LeakyIAF_bias(BaseNeuron):
-    def __init__(self, n_dict, spk, dt, debug=False):
+    def __init__(self, n_dict, spk, V, dt, debug=False):
         self.num_neurons = len(n_dict['id'])
         self.dt = np.double(dt)
         self.steps = 1
@@ -67,7 +67,8 @@ class LeakyIAF_bias(BaseNeuron):
         self.Vt  = garray.to_gpu( np.asarray( n_dict['Vt'], dtype=np.float64 ))
         self.C   = garray.to_gpu( np.asarray( n_dict['C'], dtype=np.float64 ))
         self.R   = garray.to_gpu( np.asarray( n_dict['R'], dtype=np.float64 ))
-        self.V   = garray.to_gpu( np.asarray( n_dict['V'], dtype=np.float64 ))
+        #self.V   = garray.to_gpu( np.asarray( n_dict['V'], dtype=np.float64 ))
+        self.V   = garray.GPUArray((self.num,), dtype=np.float64, gpudata=V)
         self.b   = garray.to_gpu( np.asarray( n_dict['b'], dtype=np.float64 ))
         self.spk = spk
 

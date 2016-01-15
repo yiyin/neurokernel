@@ -65,6 +65,7 @@ class AlphaSynapse(BaseSynapse):
         self.ar   = garray.to_gpu( np.asarray( s_dict['ar'], dtype=np.float64 ))
         self.ad   = garray.to_gpu( np.asarray( s_dict['ad'], dtype=np.float64 ))
         self.gmax = garray.to_gpu( np.asarray( s_dict['gmax'], dtype=np.float64 ))
+        self.post = garray.to_gpu( np.asarray( s_dict['post'], dtype=np.int32))
         self.a0   = garray.zeros( (self.num,), dtype=np.float64 )
         self.a1   = garray.zeros( (self.num,), dtype=np.float64 )
         self.a2   = garray.zeros( (self.num,), dtype=np.float64 )
@@ -75,7 +76,7 @@ class AlphaSynapse(BaseSynapse):
     @property
     def synapse_class(self): return int(0)
 
-    def update_state(self, buffer, st = None):
+    def update_state(self, buffer, V, st = None):
         self.update.prepared_async_call(
             self.gpu_grid,\
             self.gpu_block,\

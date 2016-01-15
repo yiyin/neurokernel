@@ -190,7 +190,7 @@ class AlphaSynapsePre(BaseSynapse):
     @property
     def synapse_class(self): return int(0)
 
-    def update_state(self, buffer, st = None):
+    def update_state(self, buffer, V, st = None):
         self.update.prepared_async_call(
             self.gpu_grid,\
             self.gpu_block,\

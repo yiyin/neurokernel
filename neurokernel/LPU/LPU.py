@@ -682,7 +682,7 @@ class LPU(Module):
             for synapse in self.synapses:
                 if hasattr(synapse, 'update_I'):
                     synapse.update_I(self.synapse_state.gpudata)
-                synapse.update_state(self.buffer)
+                synapse.update_state(self.buffer, self.V)
 
             self.buffer.step()
         else:
@@ -787,7 +787,9 @@ class LPU(Module):
             np.float64)
 
         if self.total_num_gpot_neurons > 0:
-            self.V = garray.zeros(int(self.total_num_gpot_neurons), np.float64)
+            self.V = garray.zeros(
+                int(self.total_num_gpot_neurons+self.total_num_spike_neurons),
+                np.float64)
         else:
             self.V = None
 
@@ -924,7 +926,7 @@ class LPU(Module):
             cuda.memcpy_dtod(int(self.buffer.gpot_buffer.gpudata) +
                 self.buffer.gpot_current*self.buffer.gpot_buffer.ld*
                 self.buffer.gpot_buffer.dtype.itemsize,
-                self.V.gpudata, self.V.nbytes)
+                self.V.gpudata, self.V.dtype.itemsize*self.total_num_gpot_neurons)
         if self.total_num_spike_neurons>0:
             cuda.memcpy_dtod(int(self.buffer.spike_buffer.gpudata) +
                 self.buffer.spike_current*self.buffer.spike_buffer.ld*
@@ -989,19 +991,21 @@ class LPU(Module):
             neuron = self._neuron_classes[ind](
                 n, int(int(self.spike_state.gpudata) +
                 self.spike_state.dtype.itemsize*self.idx_start_spike[i]),
+                int(self.V.gpudata) +
+                self.V.dtype.itemsize*(self.total_num_gpot_neurons+self.idx_start_spike[i]),
                 self.dt, debug=self.debug, LPU_id=self.id)
         else:
             neuron = self._neuron_classes[ind](
                 n, int(self.V.gpudata) +
                 self.V.dtype.itemsize*self.idx_start_gpot[i],
-                self.dt, debug=self.debug)
+                None, self.dt, debug=self.debug)
 
         if not neuron.update_I_override:
             baseneuron.BaseNeuron.__init__(
                 neuron, n,
                 int(int(self.V.gpudata) +
                 self.V.dtype.itemsize*self.idx_start_gpot[i]),
-                self.dt, debug=self.debug, LPU_id=self.id)
+                None, self.dt, debug=self.debug, LPU_id=self.id)
 
         return neuron
 
@@ -1093,7 +1097,7 @@ class CircularArray:
                 cuda.memcpy_dtod(
                     int(self.gpot_buffer.gpudata) +
                     self.gpot_buffer.ld * i * self.gpot_buffer.dtype.itemsize,
-                    rest.gpudata, rest.nbytes)
+                    rest.gpudata, rest.dtype.itemsize*num_gpot_neurons)
 
         self.num_spike_neurons = num_spike_neurons
         if num_spike_neurons > 0:

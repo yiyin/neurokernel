@@ -31,7 +31,7 @@ class power_gpot_gpot_sig(BaseSynapse):
     def synapse_class(self): return int(3)
 
 
-    def update_state(self, buffer, st = None):
+    def update_state(self, buffer, V, st = None):
         self.update_func.prepared_async_call(self.grid, self.block, st, buffer.gpot_buffer.gpudata, buffer.gpot_buffer.ld, buffer.gpot_current, buffer.gpot_delay_steps, self.pre.gpudata, self.synapse_state_pointer, self.threshold.gpudata, self.slope.gpudata, self.power.gpudata, self.saturation.gpudata, self.delay.gpudata)
 
 
