@@ -21,27 +21,30 @@ __global__ void leaky_iaf(
     %(type)s *Vt,
     %(type)s *Vr,
     %(type)s *R,
-    %(type)s *C)
+    %(type)s *C,
+    %(type)s *bias)
 {
     int bid = blockIdx.x;
     int nid = bid * NNEU + threadIdx.x;
 
-    %(type)s v,i,r,c;
+    %(type)s v,i,r,c,vr,b;
 
     if( nid < neu_num ){
         v = V[nid];
         i = I[nid];
         r = R[nid];
         c = C[nid];
+        vr = Vr[nid];
+        b = b[nid];
 
         // update v
         %(type)s bh = exp( -dt/r/c );
-        v = v*bh + r*i*(1.0-bh);
+        v = v*bh + (r*(i+b[nid])+vr)*(1.0-bh);
 
         // spike detection
         spk[nid] = 0;
         if( v >= Vt[nid] ){
-            v = Vr[nid];
+            v = vr;
             spk[nid] = 1;
         }
 
@@ -64,6 +67,7 @@ class LeakyIAF(BaseNeuron):
         self.C   = garray.to_gpu( np.asarray( n_dict['C'], dtype=np.float64 ))
         self.R   = garray.to_gpu( np.asarray( n_dict['R'], dtype=np.float64 ))
         self.V   = garray.GPUArray((self.num_neurons,), dtype=np.float64, gpudata=V)
+        self.p   = garray.to_gpu( np.asarray( n_dict['p'], dtype=np.float64)) * self.C
         #self.V   = garray.to_gpu( np.asarray( n_dict['V'], dtype=np.float64 ))
         self.spk = spk
 
@@ -117,7 +121,8 @@ class LeakyIAF(BaseNeuron):
             self.Vt.gpudata,
             self.Vr.gpudata,
             self.R.gpudata,
-            self.C.gpudata)
+            self.C.gpudata,
+            self.p.gpudata)
         if self.debug:
             self.I_file.root.array.append(self.I.get().reshape((1, -1)))
             self.V_file.root.array.append(self.V.get().reshape((1, -1)))
@@ -132,7 +137,7 @@ class LeakyIAF(BaseNeuron):
                             "nneu": self.gpu_block[0] },
                 options=["--ptxas-options=-v"])
         func = mod.get_function("leaky_iaf")
-        func.prepare('idPPPPPPP')
+        func.prepare('idPPPPPPPP')
 #                     [  np.int32,   # neu_num
 #                        np.float64, # dt
 #                        np.intp,    # spk array
@@ -141,7 +146,8 @@ class LeakyIAF(BaseNeuron):
 #                        np.intp,    # Vt array
 #                        np.intp,    # Vr array
 #                        np.intp,    # R array
-#                        np.intp ])  # C array
+#                        np.intp,    # C array
+#                        np.intp ])  # p array
 
         return func
         
