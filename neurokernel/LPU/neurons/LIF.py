@@ -85,30 +85,7 @@ class LIF(BaseNeuron):
         #self.V   = garray.to_gpu( np.asarray( n_dict['V'], dtype=np.float64 ))
         self.spk = spk
 
-        _num_dendrite_cond = np.asarray([n_dict['num_dendrites_cond'][i]
-                                         for i in range(self.num_neurons)],
-                                        dtype=np.int32).flatten()
-        _num_dendrite = np.asarray([n_dict['num_dendrites_I'][i]
-                                    for i in range(self.num_neurons)],
-                                   dtype=np.int32).flatten()
-
-        self._cum_num_dendrite = garray.to_gpu(np.concatenate((
-                                    np.asarray([0,], dtype=np.int32),
-                                    np.cumsum(_num_dendrite, dtype=np.int32))))
-        self._cum_num_dendrite_cond = garray.to_gpu(np.concatenate((
-                                    np.asarray([0,], dtype=np.int32),
-                                    np.cumsum(_num_dendrite_cond, 
-                                              dtype=np.int32))))
-        self._num_dendrite = garray.to_gpu(_num_dendrite)
-        self._num_dendrite_cond = garray.to_gpu(_num_dendrite_cond)
-        self._pre = garray.to_gpu(np.asarray(n_dict['I_pre'], dtype=np.int32))
-        self._cond_pre = garray.to_gpu(np.asarray(n_dict['cond_pre'],
-                                                  dtype=np.int32))
-        self._V_rev = garray.to_gpu(np.asarray(n_dict['reverse'],
-                                               dtype=np.double))
         self.I = garray.zeros(self.num_neurons, np.double)
-        self._update_I_cond = self._get_update_I_cond_func()
-        self._update_I_non_cond = self._get_update_I_non_cond_func()
         self.update = self.get_gpu_kernel()
         if self.debug:
             if self.LPU_id is None:
@@ -162,23 +139,6 @@ class LIF(BaseNeuron):
             self.I_file.close()
             self.V_file.close()
 
-    @property
-    def update_I_override(self): return True
-
-    def update_I(self, synapse_state, st=None):
-        self.I.fill(0)
-        if self._pre.size>0:
-            self._update_I_non_cond.prepared_async_call(self._grid_get_input,
-                self._block_get_input, st, int(synapse_state),
-                self._cum_num_dendrite.gpudata, self._num_dendrite.gpudata,
-                self._pre.gpudata, self.I.gpudata)
-        if self._cond_pre.size>0:
-            self._update_I_cond.prepared_async_call(self._grid_get_input,
-                self._block_get_input, st, int(synapse_state),
-                self._cum_num_dendrite_cond.gpudata, 
-                self._num_dendrite_cond.gpudata,
-                self._cond_pre.gpudata, self.I.gpudata, self.V.gpudata,
-                self._V_rev.gpudata)
         
 
 if __name__ == '__main__':
