@@ -786,7 +786,7 @@ class LPU(Module):
             max(int(self.total_synapses) + len(self.input_neuron_list), 1),
             np.float64)
 
-        if self.total_num_gpot_neurons > 0:
+        if self.total_num_gpot_neurons + self.total_num_spike_neurons > 0:
             self.V = garray.zeros(
                 int(self.total_num_gpot_neurons+self.total_num_spike_neurons),
                 np.float64)

@@ -80,6 +80,7 @@ class LIF(BaseNeuron):
         self.tm   = garray.to_gpu( np.asarray( n_dict['tm'], dtype=np.float64 ))
         self.refrac = garray.to_gpu( np.asarray( n_dict['ref'], dtype=np.float64 ))
         self.V   = garray.GPUArray((self.num_neurons,), dtype=np.float64, gpudata=V)
+        self.V.set(self.V_rest.get())
         self.p   = garray.to_gpu( np.asarray( n_dict['p'], dtype=np.float64)) * self.C
         self.in_refrac = garray.zeros((self.num_neurons), dtype=np.float64)
         #self.V   = garray.to_gpu( np.asarray( n_dict['V'], dtype=np.float64 ))
@@ -105,7 +106,7 @@ class LIF(BaseNeuron):
             self.gpu_block,
             st,
             self.num_neurons,
-            self.dt,
+            self.dt*1000,
             self.spk,
             self.V.gpudata,
             self.I.gpudata,
